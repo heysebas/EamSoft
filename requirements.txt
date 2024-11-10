@@ -1,0 +1,8 @@
+pandas
+pyyaml
+pylint
+schedule
+pytest
+python-dotenv
+requests
+

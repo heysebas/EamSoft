@@ -1,0 +1,34 @@
+/colpensionex_utilitario/
+│
+├── README.md                        # Documentación general del proyecto
+├── LICENSE.md                       # Información sobre la licencia del proyecto
+├── .gitignore                       # Archivos y carpetas a ignorar en el control de versiones
+├── docs/
+│   ├── specifications.md            # Detalle de requisitos y especificaciones técnicas
+│   └── use_cases.md                 # Casos de uso del sistema
+│
+├── src/
+│   ├── main/
+│   │   ├── processing/
+│   │   │   ├── validate_files.py    # Validación de archivos CSV
+│   │   │   ├── load_data.py         # Carga de datos a caché
+│   │   │   └── process_requests.py  # Procesamiento de solicitudes
+│   │   └── utilities/
+│   │       ├── cache.py             # Manejo de caché de datos
+│   │       └── logs.py              # Configuración de logging
+│   └── test/
+│       ├── test_validations.py      # Pruebas de validación de archivos
+│       └── test_processing.py       # Pruebas de procesamiento de solicitudes
+│
+├── data/
+│   ├── csv/
+│   │   ├── requests.csv             # Archivos CSV con las solicitudes de cotizantes
+│   │   ├── characterizations.csv    # Archivos CSV con las caracterizaciones de los entes
+│   │   └── base_data.csv            # Otros datos necesarios para el procesamiento
+│   └── output/
+│       ├── results.csv              # Resultados procesados de las solicitudes
+│       └── log_requests/            # Carpeta para los logs de solicitudes procesadas
+│
+└── config/
+    ├── config.yaml                  # Configuración de la aplicación
+    └── logging.yaml                 # Configuración de logging
