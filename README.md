@@ -7,12 +7,19 @@ Estructura del Proyecto
 /colpensionex_utilitario/
 │
 ├── README.md                        # Documentación general del proyecto
+
 ├── LICENSE.md                       # Información sobre la licencia del proyecto
+
 ├── .gitignore                       # Archivos y carpetas a ignorar en el control de versiones
+
 ├── requirements.txt                 # Lista de dependencias del proyecto
+
 ├── docs/                            # Documentación técnica y de casos de uso
+
 ├── src/                             # Código fuente de la aplicación y utilidades
+
 ├── data/                            # Archivos CSV y datos de entrada/salida
+
 └── config/                          # Configuración de la aplicación
 
 
