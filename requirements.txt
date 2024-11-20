@@ -3,6 +3,7 @@ pyyaml
 pylint
 schedule
 pytest
+pydantic
 python-dotenv
 requests
 
