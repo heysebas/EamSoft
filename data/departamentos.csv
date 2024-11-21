@@ -4,3 +4,98 @@ id,nombre,pais_id
 3,Valle del Cauca,1
 4,Atlántico,1
 5,Bolívar,1
+6,Buenos Aires,2
+7,Córdoba,2
+8,Santa Fe,2
+9,Mendoza,2
+10,Salta,2
+11,São Paulo,3
+12,Rio de Janeiro,3
+13,Minas Gerais,3
+14,Bahia,3
+15,Paraná,3
+16,Santiago,4
+17,Valparaíso,4
+18,Biobío,4
+19,Antofagasta,4
+20,Araucanía,4
+21,Ciudad de México,5
+22,Jalisco,5
+23,Nuevo León,5
+24,Puebla,5
+25,Yucatán,5
+26,Lima,6
+27,Arequipa,6
+28,La Libertad,6
+29,Cusco,6
+30,Piura,6
+31,Caracas,7
+32,Miranda,7
+33,Zulia,7
+34,Carabobo,7
+35,Bolívar,7
+36,Montevideo,8
+37,Canelones,8
+38,Maldonado,8
+39,Salto,8
+40,Colonia,8
+41,Asunción,9
+42,Central,9
+43,Alto Paraná,9
+44,Itapúa,9
+45,Amambay,9
+46,La Paz,10
+47,Cochabamba,10
+48,Santa Cruz,10
+49,Sucre,10
+50,Oruro,10
+51,Quito,11
+52,Guayas,11
+53,Pichincha,11
+54,Manabí,11
+55,Azuay,11
+56,Panamá,12
+57,Colón,12
+58,Chiriquí,12
+59,Veraguas,12
+60,Coclé,12
+61,San José,13
+62,Alajuela,13
+63,Cartago,13
+64,Heredia,13
+65,Guanacaste,13
+66,San Salvador,14
+67,Santa Ana,14
+68,San Miguel,14
+69,La Libertad,14
+70,Sonsonate,14
+71,Tegucigalpa,15
+72,San Pedro Sula,15
+73,Cortés,15
+74,Yoro,15
+75,Choluteca,15
+76,Managua,16
+77,León,16
+78,Granada,16
+79,Masaya,16
+80,Chinandega,16
+81,Guatemala,17
+82,Quetzaltenango,17
+83,Escuintla,17
+84,Alta Verapaz,17
+85,Peten,17
+86,La Habana,18
+87,Santiago de Cuba,18
+88,Camaguey,18
+89,Holguín,18
+90,Villa Clara,18
+91,Santo Domingo,19
+92,Santiago,19
+93,La Vega,19
+94,Puerto Plata,19
+95,San Cristóbal,19
+96,San Juan,20
+97,Bayamón,20
+98,Carolina,20
+99,Ponce,20
+100,Mayagüez,20
