@@ -1,185 +1,171 @@
-import csv
-import io
 import os
-import random
-import threading
-import tkinter as tk
-from tkinter import ttk, messagebox
+import csv
+import shutil
 from datetime import datetime
 from collections import deque
-from typing import List, Dict
+import tkinter as tk
+from tkinter import ttk, messagebox
 
-# Datos simulados de los archivos CSV
-ciudades_data = """id,nombre,departamento_id
-1,Bogotá,1
-2,Medellín,2
-3,Cali,3"""
+# --- Configuración del sistema ---
+BASE_PATH = "./data"
+ENTRANTES = os.path.join(BASE_PATH, "SolicitudesEntrantes")
+EN_PROCESO = os.path.join(BASE_PATH, "SolicitudesEnProcesamiento")
+PROCESADAS = os.path.join(BASE_PATH, "SolicitudesProcesadas")
+CARACTERIZACIONES = os.path.join(BASE_PATH, "Caracterizaciones")
 
-departamentos_data = """id,nombre,pais_id
-1,Cundinamarca,1
-2,Antioquia,1
-3,Valle del Cauca,1"""
+os.makedirs(ENTRANTES, exist_ok=True)
+os.makedirs(EN_PROCESO, exist_ok=True)
+os.makedirs(PROCESADAS, exist_ok=True)
+os.makedirs(CARACTERIZACIONES, exist_ok=True)
 
-paises_data = """id,nombre
-1,Colombia"""
+# --- Funciones auxiliares ---
+def cargar_csv(filepath, columnas_requeridas=None):
+    """Carga un archivo CSV y verifica las columnas requeridas."""
+    try:
+        if not os.path.exists(filepath):
+            return []
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = list(csv.DictReader(f))
+            if columnas_requeridas:
+                for col in columnas_requeridas:
+                    if col not in data[0]:
+                        return []
+            return data
+    except Exception as e:
+        print(f"Error al cargar {filepath}: {e}")
+        return []
 
-personas_data = """id,tipo_documento,documento,nombre_completo
-1,CC,123456789,Juan Perez
-2,CC,987654321,María García"""
+def guardar_csv(filepath, data, columnas):
+    """Guarda los datos en un archivo CSV. Si el archivo existe, agrega los datos."""
+    mode = "w" if not os.path.exists(filepath) else "a"
+    with open(filepath, mode, encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=columnas)
+        if mode == "w":
+            writer.writeheader()
+        writer.writerows(data)
 
-cotizantes_data = """id,persona_id,ciudad_id,fondo_pensiones
-1,1,1,Colpensionex
-2,2,2,Porvenir"""
-
-inhabilitacion_cotizante_data = """id,persona_id,fecha_inhabilitacion
-1,1,2024-01-01"""
-
-caracterizacion_data = """tipo_documento,documento,nombre_completo,caracterizacion
-CC,123456789,Juan Perez,INHABILITAR
-CC,987654321,María García,EMBARGAR"""
-
-solicitudes_data = """id,persona_id,fecha_solicitud,estado
-1,1,2024-02-01,Generada
-2,2,2024-02-01,Generada"""
-
-
-# Clase base para leer y escribir archivos CSV
-class CSVHandler:
-    def __init__(self, data_str):  # Corregido de _init_ a __init__
-        self.data = self.load_csv_data(data_str)
-
-    def load_csv_data(self, data_str):
-        """Carga datos desde una cadena de texto como si fueran un archivo CSV."""
-        return list(csv.DictReader(io.StringIO(data_str)))
-
-    def get_all(self):
-        """Retorna todas las filas de datos."""
-        return self.data
-
-
-# Clases específicas para cada archivo
-class Ciudades(CSVHandler): pass
-
-
-class Departamentos(CSVHandler): pass
-
-
-class Paises(CSVHandler): pass
-
-
-class Personas(CSVHandler): pass
-
-
-class Cotizantes(CSVHandler): pass
-
-
-class Inhabilitaciones(CSVHandler): pass
-
-
-class Caracterizaciones(CSVHandler): pass
-
-
-class Solicitudes(CSVHandler): pass
-
-
-# Clase SuperCache para almacenar en caché los datos
+# --- Clases para manejo de datos ---
 class SuperCache:
-    def __init__(self):  # Corregido de _init_ a __init__
-        self.cache = {
-            "ciudades": Ciudades(ciudades_data).get_all(),
-            "departamentos": Departamentos(departamentos_data).get_all(),
-            "paises": Paises(paises_data).get_all(),
-            "personas": Personas(personas_data).get_all(),
-            "cotizantes": Cotizantes(cotizantes_data).get_all(),
-            "inhabilitaciones": Inhabilitaciones(inhabilitacion_cotizante_data).get_all(),
-            "caracterizaciones": Caracterizaciones(caracterizacion_data).get_all(),
-            "solicitudes": Solicitudes(solicitudes_data).get_all()
-        }
+    def __init__(self):
+        self.cache = {}
+        self._cargar_datos_base()
+
+    def _cargar_datos_base(self):
+        """Carga los datos base en memoria."""
+        self.cache["ciudades"] = cargar_csv(os.path.join(BASE_PATH, "ciudades.csv"), ["id", "nombre", "departamento_id"])
+        self.cache["departamentos"] = cargar_csv(os.path.join(BASE_PATH, "departamentos.csv"), ["id", "nombre", "pais_id"])
+        self.cache["paises"] = cargar_csv(os.path.join(BASE_PATH, "paises.csv"), ["id", "nombre"])
+        self.cache["personas"] = cargar_csv(os.path.join(BASE_PATH, "personas.csv"), ["id", "tipo_documento", "documento", "nombre_completo"])
+        self.cache["cotizantes"] = cargar_csv(os.path.join(BASE_PATH, "cotizantes.csv"), ["id", "persona_id", "ciudad_id", "fondo_pensiones"])
 
     def get_data(self, key):
         return self.cache.get(key, [])
 
-
-# Algoritmo de negocio
 class Servicio:
-    def __init__(self, super_cache):  # Corregido de _init_ a __init__
+    def __init__(self, super_cache):
         self.super_cache = super_cache
-        self.lista_negra_inhabilitados = [
-            c['documento'] for c in self.super_cache.get_data("caracterizaciones") if c['caracterizacion'] == 'INHABILITAR'
-        ]
-        self.lista_negra_embargados = [
-            c['documento'] for c in self.super_cache.get_data("caracterizaciones") if c['caracterizacion'] == 'EMBARGAR'
-        ]
-        self.cola_cotizantes = deque()
+        self.lista_negra_inhabilitados = set()
+        self.lista_negra_embargados = set()
+        self.cola_prioritaria = deque()
+
+    def validar_archivo(self, filepath, columnas_requeridas):
+        """Valida el contenido de un archivo CSV."""
+        data = cargar_csv(filepath, columnas_requeridas)
+        if not data:
+            print(f"Archivo inválido o vacío: {filepath}")
+        return data
+
+    def cargar_caracterizaciones(self):
+        """Carga las caracterizaciones de los archivos correspondientes."""
+        for filename in os.listdir(CARACTERIZACIONES):
+            filepath = os.path.join(CARACTERIZACIONES, filename)
+            data = self.validar_archivo(filepath, ["tipo_documento", "documento", "nombre_completo", "caracterizacion"])
+            for row in data:
+                if row["caracterizacion"] == "INHABILITAR":
+                    self.lista_negra_inhabilitados.add(row["documento"])
+                elif row["caracterizacion"] == "EMBARGAR":
+                    self.lista_negra_embargados.add(row["documento"])
 
     def procesar_solicitudes(self):
-        for solicitud in self.super_cache.get_data("solicitudes"):
-            persona_id = solicitud['persona_id']
-            persona = next((p for p in self.super_cache.get_data("personas") if p['id'] == persona_id), None)
-            if not persona:
+        """Procesa solicitudes desde la carpeta ENTRANTES."""
+        solicitudes_procesadas = []
+        for filename in os.listdir(ENTRANTES):
+            filepath = os.path.join(ENTRANTES, filename)
+            solicitudes = self.validar_archivo(filepath, ["id", "persona_id", "fecha_solicitud", "estado"])
+            if not solicitudes:
                 continue
 
-            # Verificar si la persona está en listas negras
-            if persona['documento'] in self.lista_negra_inhabilitados:
-                solicitud['estado'] = 'Rechazada'
-            elif persona['documento'] in self.lista_negra_embargados:
-                solicitud['estado'] = 'Aprobada'
-                self.cola_cotizantes.append(solicitud)
-            else:
-                # Aplicar políticas internas
-                edad = random.randint(18, 60)  # Simulación de la edad
-                if edad < 35:
-                    solicitud['estado'] = 'Aprobada'
-                    self.cola_cotizantes.append(solicitud)
+            for solicitud in solicitudes:
+                persona = next((p for p in self.super_cache.get_data("personas") if p["id"] == solicitud["persona_id"]), None)
+                if not persona:
+                    continue
+                
+                # Verificar estado de la persona contra listas negras
+                if persona["documento"] in self.lista_negra_inhabilitados:
+                    solicitud["estado"] = "Rechazada"
+                elif persona["documento"] in self.lista_negra_embargados:
+                    solicitud["estado"] = "Aprobada - Embargado"
                 else:
-                    solicitud['estado'] = 'Rechazada'
+                    solicitud["estado"] = "Aprobada"
+                    self.cola_prioritaria.append(solicitud)
+                
+                # Asociar información adicional del cotizante (ciudad y fondo)
+                cotizante = next((c for c in self.super_cache.get_data("cotizantes") if c["persona_id"] == solicitud["persona_id"]), None)
+                if cotizante:
+                    solicitud["ciudad"] = next((ciudad["nombre"] for ciudad in self.super_cache.get_data("ciudades") if ciudad["id"] == cotizante["ciudad_id"]), "Desconocida")
+                    solicitud["fondo"] = cotizante["fondo_pensiones"]
+                solicitudes_procesadas.append(solicitud)
+            
+            shutil.move(filepath, os.path.join(EN_PROCESO, filename))
 
+        # Guardar las solicitudes procesadas
+        now = datetime.now().strftime("%Y_%m_%d")
+        procesadas_path = os.path.join(PROCESADAS, f"SolicitudesProcesadas_{now}.csv")
+        guardar_csv(procesadas_path, solicitudes_procesadas, ["id", "persona_id", "fecha_solicitud", "estado", "ciudad", "fondo"])
+        return solicitudes_procesadas
 
-# Interfaz gráfica
 class App(tk.Tk):
-    def __init__(self, servicio):  # Corregido de _init_ a __init__
+    def __init__(self, servicio):
         super().__init__()
         self.servicio = servicio
-        self.title("Procesamiento de Solicitudes de Cotizantes")
-        self.geometry("600x400")
-
-        # Crear la tabla para mostrar las solicitudes
-        self.tree = ttk.Treeview(self, columns=("ID", "Persona ID", "Fecha Solicitud", "Estado"), show='headings')
+        self.title("Gestión de Solicitudes Colpensionex")
+        self.geometry("800x600")
+        self.tree = ttk.Treeview(self, columns=("ID", "Persona ID", "Fecha Solicitud", "Estado", "Ciudad", "Fondo"), show="headings")
         self.tree.heading("ID", text="ID")
         self.tree.heading("Persona ID", text="Persona ID")
         self.tree.heading("Fecha Solicitud", text="Fecha Solicitud")
         self.tree.heading("Estado", text="Estado")
+        self.tree.heading("Ciudad", text="Ciudad")
+        self.tree.heading("Fondo", text="Fondo")
         self.tree.pack(fill=tk.BOTH, expand=True)
-
-        # Botón de procesamiento
         btn_procesar = tk.Button(self, text="Procesar Solicitudes", command=self.procesar_solicitudes)
         btn_procesar.pack(pady=10)
+        self.cargar_datos_iniciales()
 
-        # Cargar solicitudes iniciales en la tabla
-        self.cargar_solicitudes()
+    def cargar_datos_iniciales(self):
+        """Carga las solicitudes procesadas previamente."""
+        now = datetime.now().strftime("%Y_%m_%d")
+        procesadas_path = os.path.join(PROCESADAS, f"SolicitudesProcesadas_{now}.csv")
+        solicitudes_procesadas = cargar_csv(procesadas_path, ["id", "persona_id", "fecha_solicitud", "estado", "ciudad", "fondo"]) if os.path.exists(procesadas_path) else []
+        self.cargar_datos(solicitudes_procesadas)
 
-    def cargar_solicitudes(self):
-        for solicitud in self.servicio.super_cache.get_data("solicitudes"):
-            self.tree.insert("", tk.END, values=(
-                solicitud['id'],
-                solicitud['persona_id'],
-                solicitud['fecha_solicitud'],
-                solicitud['estado']
-            ))
-
-    def procesar_solicitudes(self):
-        self.servicio.procesar_solicitudes()
-        # Limpiar y recargar solicitudes en la tabla
+    def cargar_datos(self, datos):
+        """Carga datos en la tabla."""
         for item in self.tree.get_children():
             self.tree.delete(item)
-        self.cargar_solicitudes()
-        messagebox.showinfo("Proceso completado", "Las solicitudes han sido procesadas correctamente.")
+        for dato in datos:
+            self.tree.insert("", tk.END, values=(dato["id"], dato["persona_id"], dato["fecha_solicitud"], dato["estado"], dato.get("ciudad", ""), dato.get("fondo", "")))
 
+    def procesar_solicitudes(self):
+        """Procesa las solicitudes y actualiza la tabla."""
+        self.servicio.cargar_caracterizaciones()
+        solicitudes = self.servicio.procesar_solicitudes()
+        self.cargar_datos(solicitudes)
+        messagebox.showinfo("Proceso Completado", "Las solicitudes fueron procesadas correctamente.")
 
-# Configuración y ejecución
-super_cache = SuperCache()
-servicio = Servicio(super_cache)
-
-# Iniciar la aplicación
-app = App(servicio)
-app.mainloop()
+# --- Ejecución ---
+if __name__ == "__main__":
+    super_cache = SuperCache()
+    servicio = Servicio(super_cache)
+    app = App(servicio)
+    app.mainloop()
