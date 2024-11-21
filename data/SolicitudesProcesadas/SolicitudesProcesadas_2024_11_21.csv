@@ -1,0 +1,5 @@
+id,persona_id,fecha_solicitud,estado,ciudad,fondo
+1,1,2024-02-01,Rechazada,Bogotá,Colpensionex
+2,2,2024-02-01,Aprobada - Embargado,Medellín,Porvenir
+3,3,2024-02-02,Aprobada - Embargado,Cali,Protección
+4,4,2024-02-02,Aprobada,Barranquilla,Colfondos
